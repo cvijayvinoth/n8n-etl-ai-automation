@@ -1,0 +1,173 @@
+{
+  "name": "Student Data ETL Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Student Form Details",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Upload student data",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -960,
+        16
+      ],
+      "id": "41d0585e-a781-4255-9179-27e40ef2e1fb",
+      "name": "On form submission",
+      "webhookId": "10455b18-1523-4156-86b0-24e88f5c4458"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "Upload_student_data",
+        "options": {
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -784,
+        16
+      ],
+      "id": "5e3e2a46-48d9-4fc1-9cde-7101b51c5243",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Helper functions for formatting\nfunction toTitleCase(str) {\n  if (!str) return '';\n  return str.toLowerCase().trim().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');\n}\n\nfunction isValidEmail(email) {\n  const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n  return emailRegex.test(email);\n}\n\nfunction normalizeCourse(course) {\n  if (!course) return '';\n  const clean = course.trim().toLowerCase();\n  if (clean === 'python') return 'Python';\n  if (clean === 'ml' || clean === 'machine learning') return 'Machine Learning';\n  return toTitleCase(course);\n}\n\nreturn $input.all().map(item => {\n  const raw = item.json;\n\n  // 1. Clean basic fields\n  const name = toTitleCase(raw.Name);\n  const email = (raw.Email || '').trim().toLowerCase();\n  const city = toTitleCase(raw.City) || 'Not Provided';\n  const course = normalizeCourse(raw.Course);\n  const feePaid = (raw.Fee_Paid || '').trim().toLowerCase() === 'yes' ? 'Yes' : 'No';\n  \n  // 2. Format phone number (checks if valid 10-digit number)\n  const rawPhone = (raw.Phone || '').trim();\n  const phone = rawPhone.length === 10 ? rawPhone : 'Invalid/Missing';\n\n  // 3. Email validation flag\n  const validEmail = isValidEmail(email);\n\n  return {\n    json: {\n      Student_ID: raw.Student_ID,\n      Name: name,\n      Email: email,\n      Phone: phone,\n      Course: course,\n      Fee_Paid: feePaid,\n      City: city,\n      Enrolled_Date: raw.Enrolled_Date,\n      is_valid_email: validEmail\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        16
+      ],
+      "id": "159a8169-2cc1-4589-9dec-fe5afd250d21",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1e094e59-65c1-46bc-9445-6f70a3512256",
+              "leftValue": "={{ $json.is_valid_email }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "75b3c138-4c9d-4978-acf3-96688cb288db",
+              "leftValue": "={{ $json.Fee_Paid }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -336,
+        16
+      ],
+      "id": "1fe49a96-32fd-48c2-9027-7d7d838ecc8f",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -112,
+        16
+      ],
+      "id": "f0b427c0-7d48-400a-8228-776fe5b5bbf2",
+      "name": "Convert to File"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "84ad8db4-ed0d-4b72-bee7-aad4c5777d6b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "943aa5ad6bec66034cb27750aa2f1ce8181de0a14561951c43d513b685bf85e1"
+  },
+  "nodeGroups": [],
+  "id": "GarNGGcljRSO6bVl",
+  "tags": []
+}
