@@ -100,8 +100,8 @@ An intelligent, event-driven ETL (Extract, Transform, Load) workflow built with 
 ### 2. Run Python Alternative Pipeline
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/<your-repo-name>.git
-cd <your-repo-name>/scripts
+git clone https://github.com/cvijayvinoth/n8n-etl-ai-automation.git
+cd cvijayvinoth/scripts
 
 # Install dependencies
 pip install -r requirements.txt
