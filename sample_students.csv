@@ -1,0 +1,8 @@
+Student_ID,Name,Email,Phone,Course,Fee_Paid,City,Enrolled_Date
+STU1001,  rajesh kumar ,rajesh@gmail.com,9876543210,python,yes,chennai,10-01-2025
+STU1002,Priya S,priya.s@yahoo.com,,ml,no,coimbatore,06-05-2025
+STU1003,suresh b,suresh_invalid_email,9123456780,DS,paid,CHENNAI,12-02-2025
+STU1004,ANITHA R,anitha@gmail.com,9000011111,machine learning,no,chennai,05-04-2025
+STU1006,deepa m,deepam@gmail.com,8123456789,data science,yes,salem,09-03-2025
+STU1008,kavitha,kavitha99@gmail.com,9988776655,ml,yes,Chennai,15-01-2025
+STU1010,Nithya R,nithyar@yahoo.com,9765432109,data science,no,madurai,25-04-2025

@@ -1,88 +1,137 @@
-# n8n & Python AI-Driven ETL Automation
+# AI-Powered Student Enrollment ETL Pipeline
 
-A comprehensive, production-grade repository demonstrating automated **ETL (Extract, Transform, Load)** pipelines, node architecture, and event-driven automation using **n8n** and **Python**.
-
-This repository contains end-to-end documentation, architectural guides, workflow exports, and equivalent Python implementations for processing, validating, and transforming tabular datasets.
+An intelligent, event-driven ETL (Extract, Transform, Load) workflow built with **n8n**, **OpenAI**, and **JavaScript** that automatically ingests student enrollment CSV data, enriches and cleans records using AI and deterministic scripts, filters targeted student cohorts (students located in **Chennai** with **valid email addresses**), and exports the sanitized dataset into a formatted **Microsoft Excel (.xlsx)** file.
 
 ---
 
-## 📑 Repository Structure
+## 🎯 Objectives & Features
+
+- **Extract**: Ingest raw student enrollment datasets from uploaded CSV files.
+- **AI Processing**: Leverage OpenAI LLMs via the LangChain Basic LLM Chain to structure and contextualize records.
+- **Data Standardization**: Strip leading/trailing whitespaces, enforce Title Case, and map synonymous course names (e.g., `ml` $\rightarrow$ `Machine Learning`).
+- **Validation**: Validate email addresses using standard RFC regular expressions and verify 10-digit phone numbers.
+- **Normalization**: Standardize fee payment indicators into strict boolean flags (`Yes` / `No`).
+- **Targeted Filtering**: Route and isolate students located in **Chennai** with verified emails using strict boolean gating.
+- **Load & Export**: Convert transformed JSON streams into production-ready Excel (`.xlsx`) spreadsheets.
+
+---
+
+## 🛠️ Technologies Used
+
+| Technology | Role in Architecture |
+| :--- | :--- |
+| **n8n** | Workflow orchestration, event triggering, and node-based pipeline execution |
+| **OpenAI (GPT-4o / GPT-4o-mini)** | Context-aware AI data parsing, entity classification, and anomaly cleanup |
+| **JavaScript (ES6+)** | High-performance deterministic cleansing, normalization, and regex validation |
+| **CSV** | Input raw tabular data format |
+| **Excel (.xlsx)** | Structured business export format |
+| **Git & GitHub** | Version control, documentation, and repository management |
+
+---
+
+## 🔄 Workflow Architecture
+
+```text
++----------------+      +-------------------+      +---------------------+
+| 1. CSV Upload  | ---> | 2. Extract File   | ---> | 3. Basic LLM Chain  |
+| (Form Trigger) |      | (Parse Raw CSV)   |      | + OpenAI Chat Model |
++----------------+      +-------------------+      +---------------------+
+                                                              |
+                                                              v
++----------------+      +-------------------+      +---------------------+
+| 7. Convert File| <--- |    6. IF Node     | <--- | 5. Code in JS Node  |
+| (Export .xlsx) | (True)| (City=Chennai && |      | (Clean, Validate,   |
++----------------+      |   Valid Email)    |      |  Normalize Fees)    |
+                        +-------------------+      +---------------------+
+```
+
+### Detailed Node Execution Flow
+
+1. **CSV Upload (`n8n-nodes-base.formTrigger`)**
+   - Web-accessible upload portal enabling end users or integrations to submit enrollment CSV files securely.
+2. **Extract from File (`n8n-nodes-base.extractFromFile`)**
+   - Ingests binary CSV data, parses headers, and streams row items as structured JSON payloads.
+3. **Basic LLM Chain (`@n8n/n8n-nodes-langchain.chainLlm`)**
+   - Directs record inputs into language model prompts to normalize anomalous fields and resolve inconsistencies.
+4. **OpenAI Chat Model (`@n8n/n8n-nodes-langchain.lmChatOpenAi`)**
+   - Sub-node providing OpenAI model connectivity (`gpt-4o-mini` with low temperature for deterministic parsing).
+5. **Code in JavaScript (`n8n-nodes-base.code`)**
+   - Deterministic sanitization layer:
+     - Trims excess whitespace and formats `Name` and `City` to Title Case.
+     - Maps `Course` values to unified naming conventions.
+     - Runs RFC regex pattern checking against `Email` (`is_valid_email: true/false`).
+     - Normalizes `Fee_Paid` inputs (`yes`, `paid`, `y`, `1` $\rightarrow$ `Yes`, else `No`).
+     - Verifies telephone numeric lengths (10 digits).
+6. **IF Node (`n8n-nodes-base.if`)**
+   - Dual-condition logical filter (`AND` combinator):
+     - `City` equals `Chennai` (case-insensitive)
+     - `is_valid_email` is `true`
+7. **Convert to File (`n8n-nodes-base.convertToFile`)**
+   - Encodes filtered JSON data into an Excel spreadsheet (`chennai_verified_students.xlsx`).
+
+---
+
+## 📂 Repository Structure
 
 ```text
 ├── README.md
 ├── docs/
-│   ├── 01-n8n-editor-tour.md            # Interactive UI overview, canvas, panels, and shortcuts
-│   ├── 02-nodes-and-node-types.md       # Core taxonomy of nodes (Trigger, Action, Logic, Transform)
-│   ├── 03-node-types-full-overview.md   # Deep dive into protocols, credentials, and error handling
-│   ├── 04-http-vs-webhook-node.md       # Inbound event-driven webhooks vs. outbound polling/calls
-│   ├── 05-etl-ai-automation-n8n.md      # Workflow architecture, parsing, validation, and export
-│   ├── 06-etl-ai-automation-python.md   # Idiomatic Pandas and Pydantic equivalent implementation
-│   └── 07-etl-ai-automation-demo.md     # Step-by-step pipeline execution walkthrough & outputs
+│   ├── workflow-architecture.md         # Detailed breakdown of nodes, parameters, and AI prompts
+│   └── data-transformation-rules.md     # Cleansing formulas, regex rules, and normalizations
 ├── workflows/
-│   └── student-etl-pipeline.json        # Production n8n workflow export (Form -> Extract -> Code -> Filter -> File)
+│   └── student-enrollment-pipeline.json # n8n workflow export ready for 1-click import
 ├── scripts/
-│   ├── etl_pipeline.py                  # Python equivalent ETL automation script
-│   └── requirements.txt                 # Dependencies for local Python execution
+│   ├── etl_pipeline.py                  # Standalone Python script matching the pipeline logic
+│   └── requirements.txt                 # Python dependencies (pandas, openpyxl)
 └── data/
-    └── sample-students.csv              # Reference input dataset
+    └── sample_students.csv              # Test dataset containing raw, uncleaned records
 ```
 
 ---
 
-## 🚀 Key Modules Covered
+## 🚀 Setup & Execution Guide
 
-| Module | Focus Area | Description |
-| :--- | :--- | :--- |
-| **Editor Tour** | Canvas & Execution Lifecycle | Navigation, canvas controls, input/output inspection, pin data, and test runs. |
-| **Node Architecture** | Extensible Blocks | Classification across Triggers, Action Nodes, Logic Routers, and Custom Code blocks. |
-| **Protocol Design** | Inbound vs. Outbound | Webhook triggers (push/event-driven) vs. HTTP Request nodes (pull/REST interactions). |
-| **ETL Automation (n8n)** | Low-Code Stream Processing | Automated file ingestion via Form Trigger, CSV parsing, JS field sanitization, validation filters, and binary export. |
-| **ETL Automation (Python)**| High-Throughput Processing | Clean Python Pandas and regex pipeline matching the n8n data manipulation logic. |
+### 1. Import Workflow into n8n
+1. Open your n8n workspace.
+2. Select **Workflows > Import from File** and upload `workflows/student-enrollment-pipeline.json`.
+3. Connect your **OpenAI API Key** inside credentials for the `OpenAI Chat Model` node.
+4. Click **Save** and activate the workflow.
 
----
-
-## 🛠️ The ETL Pipeline Overview
-
-The pipeline ingests raw student records containing dirty data (inconsistent casing, missing values, non-standardized course names, invalid emails/phones), validates them, and produces a sanitized export:
-
-```mermaid
-graph LR
-    A[Form Trigger / Upload] --> B[Extract from File]
-    B --> C[Code Node / Data Cleansing]
-    C --> D[Filter Node / Business Rules]
-    D --> E[Convert to File / Clean CSV Export]
-```
-
-1. **Extract**: User submits file via `n8n-nodes-base.formTrigger` and `n8n-nodes-base.extractFromFile` decodes the CSV binary.
-2. **Transform**: `n8n-nodes-base.code` executes JavaScript logic to:
-   - Normalize string casings to Title Case.
-   - Clean and standardize courses (`python` -> `Python`, `ml` -> `Machine Learning`).
-   - Validate email addresses using RFC regex patterns.
-   - Sanitize 10-digit telephone numbers.
-3. **Filter**: `n8n-nodes-base.filter` passes only records that satisfy business constraints (`is_valid_email == true` OR `Fee_Paid == 'Yes'`).
-4. **Load**: `n8n-nodes-base.convertToFile` encodes the structured JSON stream back into a downloadable CSV asset.
-
----
-
-## ⚡ Quick Start
-
-### Running the n8n Workflow
-1. Open your self-hosted or cloud n8n instance.
-2. Click **Workflow Settings > Import from File** and select `workflows/student-etl-pipeline.json`.
-3. Activate the workflow or click **Test workflow**.
-4. Open the generated Form URL, upload `data/sample-students.csv`, and observe the live execution.
-
-### Running the Python Pipeline
+### 2. Run Python Alternative Pipeline
 ```bash
-# Navigate to scripts directory
-cd scripts
+# Clone the repository
+git clone https://github.com/<your-username>/<your-repo-name>.git
+cd <your-repo-name>/scripts
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the automated ETL pipeline
-python etl_pipeline.py --input ../data/sample-students.csv --output ../data/processed-students.csv
+# Run ETL script (Filters for Chennai + Valid Email and outputs .xlsx)
+python etl_pipeline.py --input ../data/sample_students.csv --output ../data/chennai_verified_students.xlsx
 ```
+
+---
+
+## 📊 Sample Input vs. Output
+
+### Input (`sample_students.csv`)
+```csv
+Student_ID,Name,Email,Phone,Course,Fee_Paid,City,Enrolled_Date
+STU1001,  rajesh kumar ,rajesh@gmail.com,9876543210,python,yes,chennai,10-01-2025
+STU1002,Priya S,priya.s@yahoo.com,,ml,no,coimbatore,06-05-2025
+STU1003,suresh b,suresh_invalid_at_gmail,9123456780,DS,paid,CHENNAI,12-02-2025
+STU1004,ANITHA R,anitha@gmail.com,9000011111,machine learning,no,chennai,05-04-2025
+STU1008,kavitha,kavitha99@gmail.com,9988776655,ml,yes,Chennai,15-01-2025
+```
+
+### Output (`chennai_verified_students.xlsx`)
+| Student_ID | Name | Email | Phone | Course | Fee_Paid | City | Enrolled_Date | is_valid_email |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| STU1001 | Rajesh Kumar | rajesh@gmail.com | 9876543210 | Python | Yes | Chennai | 10-01-2025 | TRUE |
+| STU1004 | Anitha R | anitha@gmail.com | 9000011111 | Machine Learning | No | Chennai | 05-04-2025 | TRUE |
+| STU1008 | Kavitha | kavitha99@gmail.com | 9988776655 | Machine Learning | Yes | Chennai | 15-01-2025 | TRUE |
+
+*(Note: STU1002 excluded due to City != Chennai; STU1003 excluded due to invalid email address format).*
 
 ---
 
